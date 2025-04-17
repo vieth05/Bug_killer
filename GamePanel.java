@@ -9,6 +9,7 @@ import javax.swing.Timer;
 public class GamePanel extends JPanel implements ActionListener, MouseListener {
     private static final int ANT_SIZE = 50;
     private static final int FRAME_RATE = 30;  // Thời gian delay cho timer của game
+    private int highScore = ScoreManager.loadHighScore();
 
     private Timer timer;
     private ArrayList<Bug> bugs;
@@ -57,9 +58,11 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 20));
         g.drawString("Score: " + score, 20, 30);
+        g.drawString("High Score: " + highScore, 20, 55);  // <== thêm dòng này
         g.drawString("Lives: " + lives, 20, 60);
         g.drawString("Speed: " + antSpeed, 20, 90);
         g.drawString("Spawn Rate: " + bugsPerSpawn + " bugs/sec", 20, 120);
+
     }
 
     @Override
@@ -92,9 +95,42 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
                 lives--;
                 if (lives == 0) {
                     timer.stop();
-                    JOptionPane.showMessageDialog(this, "Game Over! Your score: " + score);
+
+                    if (score > highScore) {
+                        highScore = score;
+                        ScoreManager.saveHighScore(highScore);
+
+                        // Load và resize ảnh chúc mừng
+                        ImageIcon rawIcon = new ImageIcon("congrate.png");
+                        Image scaledImg = rawIcon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+                        ImageIcon icon = new ImageIcon(scaledImg);
+
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "🎉 New High Score: " + highScore + " 🎉",
+                                "🏆 Congratulations!",
+                                JOptionPane.INFORMATION_MESSAGE,
+                                icon
+                        );
+                    } else {
+                        // Load và resize ảnh bình thường
+                        ImageIcon rawIcon = new ImageIcon("normal.png");
+                        Image scaledImg = rawIcon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+                        ImageIcon icon = new ImageIcon(scaledImg);
+
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Your Score: " + score + "\nHigh Score: " + highScore,
+                                "Game Over",
+                                JOptionPane.PLAIN_MESSAGE,
+                                icon
+                        );
+                    }
+
+
                     System.exit(0);
                 }
+
             }
         }
 
@@ -110,6 +146,10 @@ public class GamePanel extends JPanel implements ActionListener, MouseListener {
             if (bug.isClicked(e.getX(), e.getY()) && !bug.alive) {
                 iterator.remove();
                 score += bug.getScoreValue();
+                if (score > highScore) {
+                    highScore = score;
+                    ScoreManager.saveHighScore(highScore);
+                }
 
                 if (bug instanceof IceBeetle) {
                     applyFreezeEffect(); // Áp dụng hiệu ứng đóng băng cho IceBeetle
